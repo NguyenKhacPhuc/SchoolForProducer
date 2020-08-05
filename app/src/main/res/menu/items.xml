@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+   >
+    <group android:checkableBehavior="single">
+        <item android:id="@+id/university"
+            android:title="University"
+            android:icon="@drawable/university"/>
+        <item android:id="@+id/entertainment"
+            android:title="Entertainment"
+            android:icon="@drawable/party"/>
+        <item android:id="@+id/radio"
+            android:title="Radio"
+            android:icon="@drawable/audio"/>
+        <item android:id="@+id/dictionary"
+            android:title="Dictionary"
+            android:icon="@drawable/book"/>
+        <item android:id="@+id/notification"
+            android:title="Notification"
+            android:icon="@drawable/notifications"/>
+        <item android:id="@+id/deals"
+            android:title="Fire Deals"
+            android:icon="@drawable/fireplace"/>
+
+
+    </group>
+</menu>
