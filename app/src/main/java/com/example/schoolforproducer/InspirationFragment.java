@@ -9,6 +9,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.youtube.player.YouTubePlayerFragment;
+
 public class InspirationFragment extends Fragment {
     @Nullable
     @Override

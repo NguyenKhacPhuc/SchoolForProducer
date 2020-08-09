@@ -16,6 +16,8 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import com.google.android.material.tabs.TabLayout;
+import com.google.android.youtube.player.YouTubePlayerFragment;
+import com.google.android.youtube.player.YouTubePlayerSupportFragment;
 
 import java.util.ArrayList;
 
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         toolbar.setBackgroundColor(getResources().getColor(R.color.cymatics));
         setSupportActionBar(toolbar);
         viewPager.setAdapter(new UniversityPagerAdapter(getSupportFragmentManager(),0,nameOfTheFragment));
+
         tabLayout.setupWithViewPager(viewPager);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this,drawerLayout,toolbar,R.string.close,R.string.open);
         drawerLayout.addDrawerListener(toggle);
@@ -74,4 +77,5 @@ public class MainActivity extends AppCompatActivity {
         nameOfTheFragment.add("Tutorials");
         nameOfTheFragment.add("Inspiration");
     }
+
 }
