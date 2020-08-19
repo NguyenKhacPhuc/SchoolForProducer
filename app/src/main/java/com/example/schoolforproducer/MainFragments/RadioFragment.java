@@ -1,13 +1,17 @@
 package com.example.schoolforproducer.MainFragments;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.media.Image;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.IBinder;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +25,12 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
+import com.example.schoolforproducer.Constant;
+import com.example.schoolforproducer.Interfaces.IMediaChecker;
+import com.example.schoolforproducer.Query.Randoming;
 import com.example.schoolforproducer.R;
 import com.example.schoolforproducer.Services.MusicPlayService;
 import com.google.android.material.tabs.TabLayout;
@@ -36,16 +45,21 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class RadioFragment extends Fragment implements View.OnClickListener {
     View v;
     CircleImageView circleImageView;
+
     TextView channelName;
+    MusicPlayService musicPlayService;
     TextView trackName;
     SeekBar seekBar;
     ImageButton next;
+    ServiceConnection serviceConnection;
     ImageButton previous;
     ImageButton play;
     boolean isPlay;
     TextView durationStart;
     TextView durationEnd;
     CustomReceiver customReceiver;
+    Randoming randoming;
+    RequestQueue requestQueue;
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -54,7 +68,7 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
         next.setOnClickListener(this);
         previous.setOnClickListener(this);
         play.setOnClickListener(this);
-        Objects.requireNonNull(getActivity()).startService(new Intent(getContext(), MusicPlayService.class));
+        playMusic();
         return v;
 
     }
@@ -65,9 +79,11 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
         seekBar = (SeekBar) v.findViewById(R.id.seekbar);
         next = (ImageButton) v.findViewById(R.id.next);
         previous = (ImageButton) v.findViewById(R.id.previous);
+        requestQueue = Volley.newRequestQueue(getContext());
         play = (ImageButton) v.findViewById(R.id.play);
         durationStart = (TextView) v.findViewById(R.id.durationStart);
         durationEnd = (TextView) v.findViewById(R.id.durationEnd);
+        randoming = new Randoming(Constant.URL,requestQueue,getContext());
         isPlay = false;
     }
 
@@ -76,22 +92,22 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
 
         switch (v.getId()){
             case R.id.next:
-                Objects.requireNonNull(getActivity()).stopService(new Intent(getContext(),MusicPlayService.class));
-                Objects.requireNonNull(getActivity()).startService(new Intent(getContext(), MusicPlayService.class));
-                break;
             case R.id.previous:
-                Objects.requireNonNull(getActivity()).stopService(new Intent(getContext(),MusicPlayService.class));
-                Objects.requireNonNull(getActivity()).startService(new Intent(getContext(), MusicPlayService.class));
+               getActivity().unbindService(serviceConnection);
+                playMusic();
+                musicPlayService.play();
                 break;
             case R.id.play:
                 if(isPlay){
                     play.setImageResource(R.drawable.pause);
                     isPlay = false;
-                    Objects.requireNonNull(getActivity()).startService(new Intent(getContext(), MusicPlayService.class));
+                    musicPlayService.play();
+
+
                 }else{
                     play.setImageResource(R.drawable.play);
                     isPlay= true;
-                    Objects.requireNonNull(getActivity()).stopService(new Intent(getContext(),MusicPlayService.class));
+                    musicPlayService.paused();
                 }
                 break;
             default:
@@ -114,6 +130,33 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
         intentFilter.addAction("Track");
         getActivity().registerReceiver(customReceiver,intentFilter);
     }
+    void playMusic(){
+         serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                MusicPlayService.MediaBinder mediaBinder = (MusicPlayService.MediaBinder) service;
+                musicPlayService = mediaBinder.getService();
+                musicPlayService.play();
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+
+            }
+        };
+        randoming.getRandomMusic(new IMediaChecker() {
+            @Override
+            public void check(String url) {
+                Intent intent = new Intent(getContext(),MusicPlayService.class);
+                intent.putExtra("url",url);
+                getActivity().bindService(intent,serviceConnection,Context.BIND_AUTO_CREATE);
+
+            }
+        });
+
+
+    }
+
 }
 
 class CustomReceiver extends BroadcastReceiver{

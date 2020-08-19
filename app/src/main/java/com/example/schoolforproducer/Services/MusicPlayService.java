@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -29,67 +30,56 @@ import at.huber.youtubeExtractor.YouTubeExtractor;
 import at.huber.youtubeExtractor.YtFile;
 
 public class MusicPlayService extends Service {
-    private String url = YoutubeConfig.getSCHEME()+ QueryKeywords.getPlaylistItemQuery()
-            +QueryKeywords.getPART()+"snippet"
-            +QueryKeywords.getPlaylistId()+"PLDfKAXSi6kUZnATwAUfN6tg1dULU-7XcD"
-            +QueryKeywords.getKEY()
-            +QueryKeywords.getKeyApi()
-            +QueryKeywords.getMAX()+"50";
+    private IBinder iBinder = new MediaBinder();
     MediaPlayer mediaPlayer;
 
-    RequestQueue requestQueue;
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Toast.makeText(this,"Testing Service",Toast.LENGTH_SHORT).show();
-        mediaPlayer = new MediaPlayer();
-         requestQueue = Volley.newRequestQueue(this);
-        TrackDAO trackDAO = new TrackDAO();
-        trackDAO.getRandomMusic(url, requestQueue, new VolleyCallBack() {
-            @SuppressLint("StaticFieldLeak")
-            @Override
-            public void getArray(final Track track) {
-                String link = Constant.YOUTUBE_LINK+track.getId();
-                new YouTubeExtractor(getApplicationContext()) {
-                    @Override
-                    protected void onExtractionComplete(SparseArray<YtFile> ytFiles, VideoMeta videoMeta) {
 
-                        YtFile ytFile = ytFiles.get(140);
-                        Intent intent = new Intent();
-                        intent.setAction("Track");
-                        Bundle bundle = new Bundle();
-                        bundle.putString("thumbnail",track.getThumbnail());
-                        bundle.putString("channelName", track.getTrackChannel());
-                        bundle.putString("title",track.getTrackName());
-                        bundle.putLong("duration",videoMeta.getVideoLength()*1000);
-                        intent.putExtras(bundle);
-                        sendBroadcast(intent);
 
-                        String url = ytFile.getUrl().replace("\\","");
-                        try {
-                            mediaPlayer.setDataSource(url);
-                            mediaPlayer.prepare();
-                            mediaPlayer.start();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        Log.d("url player",url);
+        return super.onStartCommand(intent,flags,startId);
+    }
 
-                    }
-                }.extract(link,true,true);
-            }
-        });
-        return START_STICKY;
+    @Override
+    public boolean onUnbind(Intent intent) {
+        return super.onUnbind(intent);
     }
 
     @Override
     public void onDestroy() {
+        mediaPlayer.release();
         super.onDestroy();
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
-    }
+        String url = intent.getStringExtra("url");
+        mediaPlayer = new MediaPlayer();
+        try {
+            mediaPlayer.setDataSource(url);
+            mediaPlayer.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
+        return iBinder;
+    }
+    public void play(){
+
+            mediaPlayer.start();
+
+    }
+    public void paused(){
+
+            mediaPlayer.pause();
+
+    }
+    public class MediaBinder extends Binder{
+        public MusicPlayService getService(){
+            return MusicPlayService.this;
+        }
+    }
 }
+
