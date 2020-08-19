@@ -22,21 +22,12 @@
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             />
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayoutUniversity"
+        <FrameLayout
+            android:id="@+id/fragment_container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:tabIndicator="@color/colorAccent"
-            android:background="@color/cymatics"
-            android:layout_below="@+id/toolbar"
-            app:tabMode="scrollable"
-            app:tabSelectedTextColor="@android:color/black"
-            app:tabTextColor="@android:color/white"/>
-        <androidx.viewpager.widget.ViewPager
-            android:id="@+id/viewPager"
-            android:layout_width="match_parent"
-            android:layout_below="@+id/tabLayoutUniversity"
-            android:layout_height="wrap_content"/>
+            android:layout_height="match_parent"
+            android:layout_below="@+id/toolbar"/>
+
 
     </RelativeLayout>
     <com.google.android.material.navigation.NavigationView
