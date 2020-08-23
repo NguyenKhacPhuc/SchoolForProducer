@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -12,6 +13,7 @@ import android.util.SparseArray;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
@@ -75,6 +77,10 @@ public class MusicPlayService extends Service {
 
             mediaPlayer.pause();
 
+    }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void seekTo(long milisec){
+        mediaPlayer.seekTo(milisec,MediaPlayer.SEEK_CLOSEST);
     }
     public class MediaBinder extends Binder{
         public MusicPlayService getService(){

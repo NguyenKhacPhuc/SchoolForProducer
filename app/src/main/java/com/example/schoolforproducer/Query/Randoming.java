@@ -47,6 +47,8 @@ public class Randoming {
                         bundle.putString("channelName", track.getTrackChannel());
                         bundle.putString("title",track.getTrackName());
                         bundle.putLong("duration",videoMeta.getVideoLength()*1000);
+                        Log.d("Length Second", String.valueOf(videoMeta.getVideoLength()));
+                        Log.d("Length Second", String.valueOf(videoMeta.getVideoLength()*1000));
                         intent.putExtras(bundle);
                         context.sendBroadcast(intent);
 

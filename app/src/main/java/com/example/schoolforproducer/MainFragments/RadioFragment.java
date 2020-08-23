@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.media.Image;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.IBinder;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
@@ -60,6 +62,12 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
     CustomReceiver customReceiver;
     Randoming randoming;
     RequestQueue requestQueue;
+    private CountDownTimer countDownTimer;
+    long length;
+    long temp;
+    private Long defaultDuration = 0L;
+    long currentLength;
+    long currentMil;
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -69,6 +77,49 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
         previous.setOnClickListener(this);
         play.setOnClickListener(this);
         playMusic();
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onProgressChanged(final SeekBar seekBar, final int progress, final boolean fromUser) {
+                if(countDownTimer != null && fromUser){
+
+
+                    currentMil = progress*1000;
+                    musicPlayService.seekTo(currentMil);
+                    currentLength = temp-currentMil;
+                    countDownTimer.cancel();
+                    countDownTimer = new CountDownTimer(currentLength,1000) {
+                        @RequiresApi(api = Build.VERSION_CODES.O)
+                        @Override
+                        public void onTick(long millisUntilFinished) {
+                            int current = seekBar.getProgress();
+                            currentLength = currentLength-1000;
+                            currentMil = currentMil+1000;
+                            seekBar.setProgress(current+1);
+                            String lengthStr = convertToSecond(currentLength);
+                            String defaultStr = convertToSecond(currentMil);
+                            durationStart.setText(defaultStr);
+                            durationEnd.setText(lengthStr);
+                        }
+
+                        @Override
+                        public void onFinish() {
+                            playMusic();
+                        }
+                    }.start();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
         return v;
 
     }
@@ -93,7 +144,7 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
         switch (v.getId()){
             case R.id.next:
             case R.id.previous:
-               getActivity().unbindService(serviceConnection);
+               Objects.requireNonNull(getActivity()).unbindService(serviceConnection);
                 playMusic();
                 musicPlayService.play();
                 break;
@@ -125,7 +176,7 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
     public void onStart() {
         super.onStart();
         initView();
-        customReceiver = new CustomReceiver(channelName,trackName,circleImageView,seekBar,durationStart,durationEnd);
+        customReceiver = new CustomReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("Track");
         getActivity().registerReceiver(customReceiver,intentFilter);
@@ -149,90 +200,70 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
             public void check(String url) {
                 Intent intent = new Intent(getContext(),MusicPlayService.class);
                 intent.putExtra("url",url);
-                getActivity().bindService(intent,serviceConnection,Context.BIND_AUTO_CREATE);
+                Objects.requireNonNull(getActivity()).bindService(intent,serviceConnection,Context.BIND_AUTO_CREATE);
 
             }
         });
 
 
     }
+    class CustomReceiver extends BroadcastReceiver {
 
-}
-
-class CustomReceiver extends BroadcastReceiver{
-    TextView channelName;
-    TextView title;
-    CircleImageView thumbnail;
-    SeekBar seekBar;
-    TextView durationStart;
-    TextView durationEnd;
-    long length;
-    private Long defaultDuration = 0L;
-    private int totalSecond ;
-    private CountDownTimer countDownTimer;
-    public CustomReceiver(TextView channelName,TextView title
-            ,CircleImageView thumbnail
-            ,SeekBar seekBar
-            ,TextView durationStart
-            , TextView durationEnd){
-        this.channelName = channelName;
-        this.title = title;
-        this.thumbnail = thumbnail;
-        this.durationStart = durationStart;
-        this.durationEnd = durationEnd;
-        this.seekBar = seekBar;
-
-    }
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        Bundle bundle = intent.getExtras();
-        assert bundle != null;
-        String titleString = bundle.getString("title");
-        String channelStringName = bundle.getString("channelName");
-        String thumbnailStr = bundle.getString("thumbnail");
-        length = bundle.getLong("duration");
-
-        channelName.setText(channelStringName);
-        title.setText(titleString);
-        Glide.with(context).load(thumbnailStr).into(thumbnail);
-        durationEnd.setText(convertToSecond(length));
-        durationStart.setText(convertToSecond(0L));
-        countDown();
-    }
-    void countDown(){
-        defaultDuration = 0L;
-        seekBar.setProgress(0);
-        seekBar.setMax((int) (length/1000));
-        if(countDownTimer != null){
-            countDownTimer.cancel();
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            assert bundle != null;
+            String titleString = bundle.getString("title");
+            String channelStringName = bundle.getString("channelName");
+            String thumbnailStr = bundle.getString("thumbnail");
+            length = bundle.getLong("duration");
+            temp = length;
+            channelName.setText(channelStringName);
+            trackName.setText(titleString);
+            Glide.with(context).load(thumbnailStr).into(circleImageView);
+            durationEnd.setText(convertToSecond(length));
+            durationStart.setText(convertToSecond(0L));
+            countDown();
         }
-        countDownTimer = new CountDownTimer(length,1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                int current = seekBar.getProgress();
-                seekBar.setProgress(current+1);
-                if(seekBar.getProgress()==seekBar.getMax()){
-                    seekBar.setProgress(0);
+        void countDown(){
+            final long max = length*1000;
+            defaultDuration = 0L;
+            seekBar.setProgress(0);
+            seekBar.setMax((int) (length/1000));
+            if(countDownTimer != null){
+                countDownTimer.cancel();
+            }
+            countDownTimer = new CountDownTimer(length,1000) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+
+                    int current = seekBar.getProgress();
+                    seekBar.setProgress(current+1);
+                    length = length - 1000;
+                    defaultDuration = defaultDuration + 1000;
+                    String lengthStr = convertToSecond(length);
+                    String defaultStr = convertToSecond(defaultDuration);
+                    durationStart.setText(defaultStr);
+                    durationEnd.setText(lengthStr);
                 }
-                length = length - 1000;
-                defaultDuration = defaultDuration + 1000;
-                String lengthStr = convertToSecond(length);
-                String defaultStr = convertToSecond(defaultDuration);
-                durationStart.setText(defaultStr);
-                durationEnd.setText(lengthStr);
-            }
 
-            @Override
-            public void onFinish() {
+                @Override
+                public void onFinish() {
+                    Objects.requireNonNull(getActivity()).unbindService(serviceConnection);
+                    playMusic();
+                }
+            }.start();
 
-            }
-        }.start();
+        }
+
     }
     public String convertToSecond(Long duration){
-        @SuppressLint("DefaultLocale") String hms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(duration),
+        @SuppressLint("DefaultLocale") String hms = String.format("%02d:%02d",
                 TimeUnit.MILLISECONDS.toMinutes(duration) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(duration)),
                 TimeUnit.MILLISECONDS.toSeconds(duration) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(duration)));
         return hms;
     }
 
 }
+
+
