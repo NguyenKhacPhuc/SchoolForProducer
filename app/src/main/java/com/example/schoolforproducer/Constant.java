@@ -11,4 +11,8 @@ public class Constant {
             +QueryKeywords.getKEY()
             +QueryKeywords.getKeyApi()
             +QueryKeywords.getMAX()+"50";
+    public static final String NewsApi = "c394cbe05fae439dbc75e02ec0f60529";
+    public static final String BASED_URL = "https://newsapi.org/v2/";
+    public static  final String queryCountry = "country=";
+    public static final String apiKeyQuery = "&apiKey=";
 }

@@ -82,8 +82,7 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
             @Override
             public void onProgressChanged(final SeekBar seekBar, final int progress, final boolean fromUser) {
                 if(countDownTimer != null && fromUser){
-
-
+                    
                     currentMil = progress*1000;
                     musicPlayService.seekTo(currentMil);
                     currentLength = temp-currentMil;
@@ -104,6 +103,7 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
 
                         @Override
                         public void onFinish() {
+                            Objects.requireNonNull(getActivity()).unbindService(serviceConnection);
                             playMusic();
                         }
                     }.start();
@@ -179,7 +179,7 @@ public class RadioFragment extends Fragment implements View.OnClickListener {
         customReceiver = new CustomReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("Track");
-        getActivity().registerReceiver(customReceiver,intentFilter);
+        Objects.requireNonNull(getActivity()).registerReceiver(customReceiver,intentFilter);
     }
     void playMusic(){
          serviceConnection = new ServiceConnection() {
